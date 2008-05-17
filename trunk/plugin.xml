@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin>
+   <class>org.jivesoftware.openfire.plugin.PEPInMUC</class>
+   <name>PEP in MUC</name>
+   <description></description>
+   <author>Armando Jagucki and Ben Slote</author>
+   <version>0.0.1</version>
+   <date>5/16/2008</date>
+   <minServerVersion>3.5.0</minServerVersion>
+</plugin>
