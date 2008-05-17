@@ -3,9 +3,10 @@
 <plugin>
    <class>org.jivesoftware.openfire.plugin.PEPInMUCPlugin</class>
    <name>PEP in MUC</name>
-   <description></description>
-   <author>Armando Jagucki and Ben Slote</author>
-   <version>0.0.1</version>
+   <description>Allows users local to the server to explicitly broadcast their Personal Eventing information to a Multi-User Chat room via a command sent to the MUC room.</description>
+   <author>Armando Jagucki</author>
+   <author>Ben Slote</author>
+   <version>1.0.0</version>
    <date>5/16/2008</date>
    <minServerVersion>3.5.0</minServerVersion>
 </plugin>

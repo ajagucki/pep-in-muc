@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>MotD Plugin Readme</title>
+<title>PEP in MUC Plugin Readme</title>
 <style type="text/css">
   BODY {
       font-size : 100%;
@@ -42,16 +42,20 @@
 <h1>PEP in MUC Plugin Readme</h1>
 
 <h2>Overview</h2>
-<p></p>
+<p>This plugin allows users local to the server to explicitly broadcast their Personal Eventing information to a Multi-User Chat room via a command sent to the MUC room.</p>
+<p>For example, if local user VinniePaz is in a MUC room and wishes to share what he is listening to with the other occupants in the room, he can send a message to the room with body "/tune" which will cause the server to lookup his User Tune PEP node and share its payload with the other room occupants in an action format. (eg. *VinniePaz is listening to Jedi Mind Tricks - Blood Runs Cold - Violent By Design)</p>
+<p>The plugin aims to support all known PEP data formats, triggered by their node names in the form of a command. So if the user wishes to broadcast his 'mood' PEP node, he could send a message to the room with body "/mood".</p>
 
 <h2>Installation</h2>
-<p></p>
-
-<h2>Configuration</h2>
-<p></p>
+<p>Copy pepInMuc.jar into the plugins directory of your Openfire installation. The plugin will then be automatically deployed. To upgrade to a new version, copy the new pepInMuc.jar file over the existing file.</p>
 
 <h2>Using the Plugin</h2>
-<p></p>
+<p>As a local user, join a MUC room. Send a message to the room with body "/&lt;PEP_Node_Name&gt;" where &lt;PEP_Node_Name&gt; is the name of a PEP node the plugin supports.</p>
+<p>Currently, the plugin supports the following PEP node types:</p>
+<ul>
+<li>tune</li>
+<li>mood</li>
+</ul>
 
 </body>
 </html>
