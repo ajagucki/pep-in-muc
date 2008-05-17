@@ -57,7 +57,14 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         }
 
         // Process a command from the group chat message.
-        boolean processedSuccessfully = processCommand(packet);
+        boolean processedSuccessfully = false;
+        try {
+            processedSuccessfully = processCommand(packet);
+        } catch (PEPNodeNotFoundException e) {
+            Message noobMessage = createNoobMessage(e.getOffendingPacket());
+            packetRouter.route(noobMessage);
+            processedSuccessfully = true;
+        }
 
         // Do not send the command text to the MUC occupants
         if (processedSuccessfully) {
@@ -74,40 +81,7 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         return messagePacket.getType() == Message.Type.groupchat;
     }
 
-    private boolean processCommand(Packet packet) {
-        Message messagePacket = (Message) packet;
-        PEPNodeType nodeType;
-        try {
-            nodeType = getNodeType(messagePacket);
-        } catch (PEPNodeTypeNotFoundException e) {
-            return false;
-        }
-
-        switch (nodeType) {
-            case tune:
-                Message tuneMessage = createTuneMessage(packet);
-                if (tuneMessage == null) {
-                    return false;
-                }
-
-                packetRouter.route(tuneMessage);
-                return true;
-            case mood:
-                Message moodMessage = createMoodMessage(packet);
-                if (moodMessage == null) {
-                    return false;
-                }
-
-                packetRouter.route(moodMessage);
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private PEPNodeType getNodeType(Packet packet) throws PEPNodeTypeNotFoundException {
-        Message messagePacket = (Message) packet;
-
+    private PEPNodeType getNodeType(Message messagePacket) throws PEPNodeTypeNotFoundException {
         Element body = messagePacket.getElement().element("body");
         if (body == null) {
             throw new PEPNodeTypeNotFoundException();
@@ -126,31 +100,31 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         }
     }
 
-    private Message createTuneMessage(Packet packet) {
-    	Message message = new Message(packet.getElement());
-
-    	PEPService pepService = iqPEPHandler.getPEPService(packet.getFrom().toBareJID());
-        if (pepService == null) {
-            return null;
+    private boolean processCommand(Packet packet) throws PEPNodeNotFoundException {
+        Message messagePacket = (Message) packet;
+        PEPNodeType nodeType;
+        try {
+            nodeType = getNodeType(messagePacket);
+        } catch (PEPNodeTypeNotFoundException e) {
+            return false;
         }
 
-     	Element payload = null;
-     	for (Node node : pepService.getNodes()) {
-     	    if (node.getNodeID().equals(TUNE_NAMESPACE)) {
-                for (PublishedItem item : node.getPublishedItems()) {
-                    LeafNode leafNode = item.getNode();
-                    if (leafNode.getNodeID().equals(TUNE_NAMESPACE)) {
-                        payload = item.getPayload();
-                        break;
-                    }
-                }
-                break; // dance
-            }
+        switch (nodeType) {
+            case tune:
+                packetRouter.route(createTuneMessage(messagePacket));
+                return true;
+            case mood:
+                packetRouter.route(createMoodMessage(messagePacket));
+                return true;
+            default:
+                return false;
         }
+    }
 
-        if (payload == null) {
-                return null;
-        }
+    private Message createTuneMessage(Message messagePacket)  throws PEPNodeNotFoundException {
+    	Message message = new Message(messagePacket.getElement());
+
+        Element payload = getPEPPayload(messagePacket, TUNE_NAMESPACE);
 
         String artist = null;
         String title  = null;
@@ -172,7 +146,7 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
 
         // At the minimum we are going to require a title
         if (title == null) {
-            return null;
+            throw new PEPNodeNotFoundException(messagePacket);
         }
 
         String tuneMessageBodyPrefix = "/me is listening to ";
@@ -189,31 +163,10 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         return message;
     }
 
-    private Message createMoodMessage(Packet packet) {
-        Message moodMessage = new Message(packet.getElement());
+    private Message createMoodMessage(Message messagePacket) throws PEPNodeNotFoundException {
+        Message moodMessage = new Message(messagePacket.getElement());
 
-        PEPService pepService = iqPEPHandler.getPEPService(packet.getFrom().toBareJID());
-        if (pepService == null) {
-            return null;
-        }
-
-        Element payload = null;
-        for (Node node : pepService.getNodes()) {
-            if (node.getNodeID().equals(MOOD_NAMESPACE)) {
-                for (PublishedItem item : node.getPublishedItems()) {
-                    LeafNode leafNode = item.getNode();
-                    if (leafNode.getNodeID().equals(MOOD_NAMESPACE)) {
-                        payload = item.getPayload();
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-
-        if (payload == null) {
-            return null;
-        }
+        Element payload = getPEPPayload(messagePacket, MOOD_NAMESPACE);
 
         String moodValue = null;
         String moodDescription = null;
@@ -228,18 +181,17 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
             }
         }
 
+        if (moodValue == null) {
+            throw new PEPNodeNotFoundException(messagePacket);
+        }
+
         String moodMessageBodyPrefix = "/me is in ";
-        if (moodValue != null) {
-            char firstLetter = moodValue.charAt(0);
-            if (VOWELS.indexOf(firstLetter) < 0) {
-                moodMessageBodyPrefix += "a ";
-            }
-            else {
-                moodMessageBodyPrefix += "an ";
-            }
+        char firstLetter = moodValue.charAt(0);
+        if (VOWELS.indexOf(firstLetter) < 0) {
+            moodMessageBodyPrefix += "a ";
         }
         else {
-            return null;
+            moodMessageBodyPrefix += "an ";
         }
 
         String moodMessageBodySuffix = "";
@@ -253,7 +205,57 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         return moodMessage;
     }
 
-    public enum PEPNodeType {
+    private Message createNoobMessage(Message messagePacket) {
+    	Message noobMessage = new Message();
+    	noobMessage.setTo(messagePacket.getFrom());
+    	noobMessage.setFrom(messagePacket.getTo());
+    	noobMessage.setType(Message.Type.groupchat);
+
+    	String bodyPrefix = "You didn't publish your ";
+    	String bodySuffix = " yet, noob.";
+    	String fuckUp = null;
+
+    	String body = messagePacket.getBody();
+    	if (body.equals("/tune")) {
+    	    fuckUp = PEPNodeType.tune.toString();
+    	}
+    	else if (body.equals("/mood")) {
+    	    fuckUp = PEPNodeType.mood.toString();
+	    }
+
+    	noobMessage.setBody(bodyPrefix + fuckUp + bodySuffix);
+
+	    return noobMessage;
+    }
+
+    private Element getPEPPayload(Message messagePacket, String pepNamespace) throws PEPNodeNotFoundException {
+        PEPService pepService = iqPEPHandler.getPEPService(messagePacket.getFrom().toBareJID());
+        if (pepService == null) {
+            throw new PEPNodeNotFoundException(messagePacket);
+        }
+
+        Element payload = null;
+        for (Node node : pepService.getNodes()) {
+            if (node.getNodeID().equals(pepNamespace)) {
+                for (PublishedItem item : node.getPublishedItems()) {
+                    LeafNode leafNode = item.getNode();
+                    if (leafNode.getNodeID().equals(pepNamespace)) {
+                        payload = item.getPayload();
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        if (payload == null) {
+            throw new PEPNodeNotFoundException(messagePacket);
+        }
+
+        return payload;
+    }
+
+    private static enum PEPNodeType {
         /**
          * XEP-0118: User Tune
          */
@@ -264,6 +266,23 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         mood
     }
 
-    private class PEPNodeTypeNotFoundException extends Throwable {
+    private class PEPNodeTypeNotFoundException extends Exception {
+    }
+
+    private class PEPNodeNotFoundException extends Exception {
+
+        Message offendingPacket;
+
+        public PEPNodeNotFoundException() {
+            super();
+        }
+
+        public PEPNodeNotFoundException(Message messagePacket) {
+            offendingPacket = messagePacket;
+        }
+
+        public Message getOffendingPacket() {
+            return offendingPacket;
+        }
     }
 }
