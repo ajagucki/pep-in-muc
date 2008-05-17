@@ -32,14 +32,10 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
     private IQPEPHandler iqPEPHandler;
     private PacketRouter packetRouter;
 
-    // Constants
-    private static final String MOOD_NAMESPACE = "http://jabber.org/protocol/mood";
-    private static final String TUNE_NAMESPACE = "http://jabber.org/protocol/tune";
-    private static final String MOOD_COMMAND = "/mood";
-    private static final String TUNE_COMMAND = "/tune";
-
-    // TODO: fuck this nastiness, fix it
-    private static final String VOWELS = "aeiou";
+    private final String MOOD_NAMESPACE = "http://jabber.org/protocol/mood";
+    private final String TUNE_NAMESPACE = "http://jabber.org/protocol/tune";
+    private final String MOOD_COMMAND = "/mood";
+    private final String TUNE_COMMAND = "/tune";
 
     public void initializePlugin(PluginManager manager, File pluginDirectory) {
         InterceptorManager.getInstance().addInterceptor(this);
@@ -59,7 +55,7 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         }
 
         // Process a command from the group chat message.
-        boolean processedSuccessfully = false;
+        boolean processedSuccessfully;
         try {
             processedSuccessfully = processCommand(packet);
         } catch (PEPNodeNotFoundException e) {
@@ -188,12 +184,11 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         }
 
         String moodMessageBodyPrefix = "/me is in ";
-        char firstLetter = moodValue.charAt(0);
-        if (VOWELS.indexOf(firstLetter) < 0) {
-            moodMessageBodyPrefix += "a ";
+        if (startsWithVowel(moodValue)) {
+            moodMessageBodyPrefix += "an ";
         }
         else {
-            moodMessageBodyPrefix += "an ";
+            moodMessageBodyPrefix += "a ";
         }
 
         String moodMessageBodySuffix = "";
@@ -255,6 +250,10 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
         }
 
         return payload;
+    }
+
+    private boolean startsWithVowel(String string) {
+        return "aeiou".indexOf(string.charAt(0)) >= 0;
     }
 
     private static enum PEPNodeType {
