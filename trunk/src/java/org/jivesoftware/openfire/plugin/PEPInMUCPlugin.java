@@ -23,6 +23,18 @@ import java.util.Iterator;
 /**
  * PEPinMUC Plugin
  *
+ * This plugin allows users local to the server to explicitly broadcast their Personal Eventing information
+ * to a Multi-User Chat room via a command sent to the MUC room.
+ *
+ * For example, if local user VinniePaz is in a MUC room and wishes to share what he is listening to with
+ * the other occupants in the room, he can send a message to the room with body "/tune" which will cause
+ * the server to lookup his User Tune PEP node and share its payload with the other room occupants in
+ * an action format.
+ * (eg. *VinniePaz is listening to Jedi Mind Tricks - Blood Runs Cold - Violent By Design)
+ *
+ * The plugin aims to support all known PEP data formats, triggered by their node names in the form of a command.
+ * So if the user wishes to broadcast his 'mood' PEP node, he could send a message to the room with body "/mood".
+ *
  * @author Armando Jagucki
  * @author Ben Slote
  * pnhfgvd, vfjz, zovfubc; Gur CRCoblf
