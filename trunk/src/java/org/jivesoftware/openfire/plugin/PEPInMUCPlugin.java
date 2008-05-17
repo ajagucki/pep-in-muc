@@ -35,6 +35,8 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
     // Constants
     private static final String MOOD_NAMESPACE = "http://jabber.org/protocol/mood";
     private static final String TUNE_NAMESPACE = "http://jabber.org/protocol/tune";
+    private static final String MOOD_COMMAND = "/mood";
+    private static final String TUNE_COMMAND = "/tune";
 
     // TODO: fuck this nastiness, fix it
     private static final String VOWELS = "aeiou";
@@ -89,10 +91,10 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
 
         String bodyText = body.getTextTrim();
 
-        if (bodyText.equals("/tune")) {
+        if (bodyText.equals(TUNE_COMMAND)) {
             return PEPNodeType.tune;
         }
-        else if (bodyText.equals("/mood")) {
+        else if (bodyText.equals(MOOD_COMMAND)) {
             return PEPNodeType.mood;
         }
         else {
@@ -215,17 +217,17 @@ public class PEPInMUCPlugin implements Plugin, PacketInterceptor {
     	String bodySuffix = " yet, noob.";
     	String fuckUp = null;
 
-    	String body = messagePacket.getBody();
-    	if (body.equals("/tune")) {
+    	String body = messagePacket.getBody().trim();
+    	if (body.equals(TUNE_COMMAND)) {
     	    fuckUp = PEPNodeType.tune.toString();
     	}
-    	else if (body.equals("/mood")) {
+    	else if (body.equals(MOOD_COMMAND)) {
     	    fuckUp = PEPNodeType.mood.toString();
-	    }
+	}
 
     	noobMessage.setBody(bodyPrefix + fuckUp + bodySuffix);
 
-	    return noobMessage;
+	return noobMessage;
     }
 
     private Element getPEPPayload(Message messagePacket, String pepNamespace) throws PEPNodeNotFoundException {
